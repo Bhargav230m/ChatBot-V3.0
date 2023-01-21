@@ -1,0 +1,7 @@
+{
+  "token": "Your Bot Token",
+  "DataBaseURL": "MongoDB URL",
+  "BrainShopAPI": "BrainShopAPI",
+  "OPENAI_ORG": "OPENAI_ORG",
+  "OPENAI_KEY": "OPENAI_KEY"
+}
