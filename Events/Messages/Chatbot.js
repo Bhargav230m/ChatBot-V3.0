@@ -23,9 +23,14 @@ module.exports = {
         const res = await axios.get(
           `${KEY}1&msg=${encodeURIComponent(message.content)}`
         );
-        await message.reply({
-          content: `${res.data.cnt}`,
-        });
+        if (res.data.cnt === undefined || res.data.cnt === null) {
+          message.reply("I am sorry, Can you repeat it again?");
+        } else {
+          await message.reply({
+            content: `${res.data.cnt}`,
+          });
+          return;
+        }
       }
       if (Data.Type == "ChatGPT") {
         const { Configuration, OpenAIApi } = require("openai");
@@ -44,16 +49,18 @@ module.exports = {
           frequency_penalty: 0.5,
           presence_penalty: 0.0,
         });
-
-        message.reply(`${gptResponse.data.choices[0].text}`);
-        return;
+        if (gptResponse === undefined || gptResponse === null) {
+          message.reply("I am sorry, Can you repeat it again?");
+        } else {
+          message.reply(`${gptResponse.data.choices[0].text}`);
+          return;
+        }
       }
       if (Data.Type == "System") {
-        // provide optional config object (or undefined). Defaults shown.
         const config = {
           binaryThresh: 0.5,
-          hiddenLayers: [3], // array of ints for the sizes of the hidden layers in the network
-          activation: "sigmoid", // supported activation types: ['sigmoid', 'relu', 'leaky-relu', 'tanh'],
+          hiddenLayers: [3],
+          activation: "sigmoid",
           inputSize: 700,
           inputRange: 700,
           outputSize: 200,
@@ -61,33 +68,39 @@ module.exports = {
           decayRate: 0.009,
           iterations: 20000,
         };
-        // create a simple feed forward neural network with backpropagation
+
         const net = new brain.NeuralNetwork(config);
+
         const { dataset, responseMap } = require("../../Systems/Dataset.js");
         const stringSimilarity = require("string-similarity");
 
-        net.train(dataset);
-
-        // find the best match for the user's message
         const bestMatch = stringSimilarity.findBestMatch(
           message.content,
           dataset.map((data) => data.input)
         );
 
+        net.train(dataset);
+        // message.reply("Training 1%");
+        // message.reply("Training 10%");
+        // message.reply("Training 20%");
+        // message.reply("Training 100%");
+        // message.reply("Tranining Done, Executing...");
+
         const index = bestMatch.bestMatchIndex;
-        // one-hot encode the input
+
         const oneHotEncodedInput = Array(dataset.length).fill(0);
         oneHotEncodedInput[index] = 1;
         console.log(oneHotEncodedInput);
-        // run the encoded input through the network
-        const output = net.run(oneHotEncodedInput);
-        console.log(output);
-        // get the corresponding response from the responseMap
-        const highestValue = Math.max(...output);
-        const responseIndex = output.indexOf(highestValue);
-        const response = responseMap[dataset[index].output];
+
+        const outputValues = net.run(oneHotEncodedInput);
+        console.log(outputValues);
+        const highestValue = Math.max(...outputValues);
+        const responseIndex = outputValues.indexOf(highestValue);
+        const output1 = responseMap[dataset[responseIndex].output[0]];
+        console.log(output1);
+        const response = output1[Math.floor(Math.random() * output1.length)];
         console.log(response);
-        if (response === undefined || response === null) {
+        if (response === undefined || response === null || response == Object) {
           message.reply("I am sorry, Can you repeat it again?");
         } else {
           message.reply(response);
